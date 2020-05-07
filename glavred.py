@@ -4,6 +4,17 @@ from pprint import pprint
 PAGES = 104
 MIN_PAGES_AMOUNT = 4
 
+POPULATION = OrderedDict({
+    'Дун-Дук': 35000,
+    'Мунь-Чунь': 25000,
+
+    'Шакиш-Ма': 10000,
+    'Йопт': 5000,
+    'Дерде-Кефир': 5000,
+    'Анан-Ус': 5000,
+    'Хали-Гали': 10000
+})
+
 
 def get_lit_rate(beginning):
     variants = {
@@ -33,7 +44,7 @@ def _get_news_priority(query_string):
             {'rubric': 'Новости',
              'region': 'Дун-Дук'},
         'Разнообразие в провинции':
-            {'rubric': 'Внекомпьютерные Игры',
+            {'rubric': 'Внекомпьютерные игры',
              'region': 'Йопт'},
         'Функционер заставил задуматься':
             {'rubric': 'Новости',
@@ -50,7 +61,7 @@ def _get_news_priority(query_string):
         'Новости из Дун-Дука':
             {'rubric': 'Новости',
              'region': 'Дун-Дук'},
-        'Самоубийство на почве':
+        'Самоубийство':
             {'rubric': 'Игрострой',
              'region': 'Хали-Гали'},
     }
@@ -101,24 +112,18 @@ def calc_rubriс_distribution(news_priority, artist_rate):
     if complementary_rubric:
         distribution[complementary_rubric] = MIN_PAGES_AMOUNT
 
-    # assert sum(distribution.values()) == PAGES, 'Something wrong with rubriс distribution'
+    if sum(distribution.values()) < PAGES:
+        min_rubric = min(distribution, key=distribution.get)
+        distribution[min_rubric] += PAGES - sum(distribution.values())
+
+    assert sum(distribution.values()) == PAGES, \
+        f'Something went wrong with rubric distribution, {sum(distribution.values())} != {PAGES}'
     return distribution
 
 
 def calc_circulation(news_priority, amount, pr_credits, artist_rate):
     # todo first of all, distribute 10% per population to each city / town
-    POPULATION = OrderedDict({
-        'Дун-Дук': 35000,
-        'Мунь-Чунь': 25000,
-
-        'Шакиш-Ма': 10000,
-        'Йопт': 5000,
-        'Дерде-Кефир': 5000,
-        'Анан-Ус': 5000,
-        'Хали-Гали': 10000
-    })
-
-    pr = {
+    pr_koeff = {
         0: 1,
         500: 1,
         1000: 1.2,
@@ -130,28 +135,25 @@ def calc_circulation(news_priority, amount, pr_credits, artist_rate):
     town_koeff = 0.2
 
     max_circulation_per_city = OrderedDict({
-        'Дун-Дук': int(POPULATION['Дун-Дук'] * city_koeff * pr),
-        'Мунь-Чунь': int(POPULATION['Мунь-Чунь'] * city_koeff * pr),
+        'Дун-Дук': int(POPULATION['Дун-Дук'] * city_koeff * pr_koeff),
+        'Мунь-Чунь': int(POPULATION['Мунь-Чунь'] * city_koeff * pr_koeff),
 
-        'Шакиш-Ма': int(POPULATION['Шакиш-Ма'] * town_koeff * pr),
-        'Йопт': int(POPULATION['Йопт'] * town_koeff * pr),
-        'Дерде-Кефир': int(POPULATION['Дерде-Кефир'] * town_koeff * pr),
-        'Анан-Ус': int(POPULATION['Анан-Ус'] * town_koeff * pr),
-        'Хали-Гали': int(POPULATION['Хали-Гали'] * town_koeff * pr),
+        'Шакиш-Ма': int(POPULATION['Шакиш-Ма'] * town_koeff * pr_koeff),
+        'Йопт': int(POPULATION['Йопт'] * town_koeff * pr_koeff),
+        'Дерде-Кефир': int(POPULATION['Дерде-Кефир'] * town_koeff * pr_koeff),
+        'Анан-Ус': int(POPULATION['Анан-Ус'] * town_koeff * pr_koeff),
+        'Хали-Гали': int(POPULATION['Хали-Гали'] * town_koeff * pr_koeff),
     })
 
     max_circulation_per_city[news_priority['region']] *= 2.5
 
     circulation = OrderedDict({})
     circulation_left = amount
-    for city, max_circulation in max_circulation_per_city.items():
-        if circulation_left < 0:
+    for city, city_max_circulation in max_circulation_per_city.items():
+        if circulation_left <= 0:
             break
 
-        if not circulation_left:
-            break
-
-        circulation_chunk = max_circulation
+        circulation_chunk = city_max_circulation
         circulation_left -= circulation_chunk
 
         if circulation_left < 0:
@@ -160,19 +162,22 @@ def calc_circulation(news_priority, amount, pr_credits, artist_rate):
 
         circulation.update({city: circulation_chunk})
 
-    # assert sum(circulation.values()) == amount, 'Something wrong with circulation'
+    assert sum(circulation.values()) == amount, \
+        f'Something wrong with circulation: {sum(circulation.values())} != {amount}'
     return circulation
 
 
 # todo use click to write a CLI instead
-news_priority = _get_news_priority('Разнообразие в провинции')
-artist_rate = 10
+news_headline = 'Слухи о враждебных'
+artist_rate = 3
 amount = 4000
-pr_credits = 1000
+pr_credits = 0
 
-rubric_distribution = calc_rubriс_distribution(news_priority, artist_rate)
-pprint(rubric_distribution)
+news_priority = _get_news_priority(news_headline)
 
-circulation = calc_circulation(news_priority, amount=amount,
-                               pr_credits=pr_credits, artist_rate=artist_rate)
-pprint(circulation)
+rubric_distribution_suggest = calc_rubriс_distribution(news_priority, artist_rate)
+pprint(rubric_distribution_suggest)
+
+circulation_suggest = calc_circulation(news_priority, amount=amount,
+                                       pr_credits=pr_credits, artist_rate=artist_rate)
+pprint(circulation_suggest)
