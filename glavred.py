@@ -166,11 +166,13 @@ def calc_circulation(news_priority, amount, pr_credits, artist_rate):
 
 # todo use click to write a CLI instead
 news_priority = _get_news_priority('Разнообразие в провинции')
-artist_rate = 6
+artist_rate = 10
+amount = 4000
+pr_credits = 1000
 
-rubriс_distribution = calc_rubriс_distribution(news_priority, artist_rate)
-pprint(rubriс_distribution)
+rubric_distribution = calc_rubriс_distribution(news_priority, artist_rate)
+pprint(rubric_distribution)
 
-circulation = calc_circulation(news_priority, amount=31000,
-                               pr_credits=3000, artist_rate=artist_rate)
+circulation = calc_circulation(news_priority, amount=amount,
+                               pr_credits=pr_credits, artist_rate=artist_rate)
 pprint(circulation)
