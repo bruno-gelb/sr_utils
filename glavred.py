@@ -64,12 +64,15 @@ def _get_news_priority(query_string):
         'Самоубийство':
             {'rubric': 'Игрострой',
              'region': 'Хали-Гали'},
+        'Жаркое заседание':
+            {'rubric': 'Внекомпьютерные игры',
+             'region': 'Йопт'},
     }
     priority = variants.get(query_string)
     return priority
 
 
-def calc_rubriс_distribution(news_priority, artist_rate):
+def calc_rubriс_distribution(news_priority):
     NEWS_PRIORITY_RUBRIC_PAGES = 8 * MIN_PAGES_AMOUNT
 
     def _get_complementary_rubric(rubric):
@@ -122,7 +125,6 @@ def calc_rubriс_distribution(news_priority, artist_rate):
 
 
 def calc_circulation(news_priority, amount, pr_credits, artist_rate):
-    # todo first of all, distribute 10% per population to each city / town
     pr_koeff = {
         0: 1,
         500: 1,
@@ -131,18 +133,19 @@ def calc_circulation(news_priority, amount, pr_credits, artist_rate):
         3000: 2.0
     }.get(pr_credits)
 
-    city_koeff = 0.22 if artist_rate >= 3 else 0.0
-    town_koeff = 0.2
+    initial_koeff = 0.143  # tweak this in case circulation went wrong
+    city_initial_koeff = initial_koeff * pr_koeff if artist_rate >= 3 else 0.0
+    town_initial_koeff = initial_koeff * pr_koeff
 
     max_circulation_per_city = OrderedDict({
-        'Дун-Дук': int(POPULATION['Дун-Дук'] * city_koeff * pr_koeff),
-        'Мунь-Чунь': int(POPULATION['Мунь-Чунь'] * city_koeff * pr_koeff),
+        'Дун-Дук': int(POPULATION['Дун-Дук'] * city_initial_koeff),
+        'Мунь-Чунь': int(POPULATION['Мунь-Чунь'] * city_initial_koeff),
 
-        'Шакиш-Ма': int(POPULATION['Шакиш-Ма'] * town_koeff * pr_koeff),
-        'Йопт': int(POPULATION['Йопт'] * town_koeff * pr_koeff),
-        'Дерде-Кефир': int(POPULATION['Дерде-Кефир'] * town_koeff * pr_koeff),
-        'Анан-Ус': int(POPULATION['Анан-Ус'] * town_koeff * pr_koeff),
-        'Хали-Гали': int(POPULATION['Хали-Гали'] * town_koeff * pr_koeff),
+        'Шакиш-Ма': int(POPULATION['Шакиш-Ма'] * town_initial_koeff),
+        'Йопт': int(POPULATION['Йопт'] * town_initial_koeff),
+        'Дерде-Кефир': int(POPULATION['Дерде-Кефир'] * town_initial_koeff),
+        'Анан-Ус': int(POPULATION['Анан-Ус'] * town_initial_koeff),
+        'Хали-Гали': int(POPULATION['Хали-Гали'] * town_initial_koeff),
     })
 
     max_circulation_per_city[news_priority['region']] *= 2.5
@@ -169,13 +172,13 @@ def calc_circulation(news_priority, amount, pr_credits, artist_rate):
 
 # todo use click to write a CLI instead
 news_headline = 'Слухи о враждебных'
-artist_rate = 3
-amount = 4000
-pr_credits = 0
+artist_rate = 7
+amount = 31000
+pr_credits = 3000
 
 news_priority = _get_news_priority(news_headline)
 
-rubric_distribution_suggest = calc_rubriс_distribution(news_priority, artist_rate)
+rubric_distribution_suggest = calc_rubriс_distribution(news_priority)
 pprint(rubric_distribution_suggest)
 
 circulation_suggest = calc_circulation(news_priority, amount=amount,
